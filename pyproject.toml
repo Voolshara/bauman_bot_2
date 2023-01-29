@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "bauman-bot-2"
+version = "0.1.0"
+description = ""
+authors = ["Stanislav <sta-tun-slav@yandex.ru>"]
+readme = "README.md"
+packages = [{include = "./src"}, {include = "./tests"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiogram = "^2.24"
+
+
+[tool.poetry.scripts]
+start = "src.main:run"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
