@@ -76,7 +76,6 @@ async def get_info(message: types.Message):
             all_users.append([row[1], row[0] in ready_users] + row[2:])
 
     all_users.sort(key=lambda x: x[1])
-    print(all_users)
     
     for user in all_users:
         s.append(" | ".join([user[0], "Готов" if user[1] else "Не готов"] + user[2:] + ["\n"]))
@@ -94,8 +93,8 @@ async def start_check(message: types.Message):
         await message.reply("Ошибка Доступа")
         return
 
-    with open("src/is_ready.csv", 'r') as file:
-        all_users = file.readlines()
+    with open("src/all_answers.csv", 'r') as file:
+        all_users = list(map(lambda x: x.strip().split(',')[0], file.readlines()))
 
     with open("src/is_ready.csv", 'w') as file:
         pass
