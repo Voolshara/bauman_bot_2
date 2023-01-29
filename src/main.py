@@ -114,6 +114,46 @@ async def ready_user(message: types.Message):
     await message.reply("Спасибо за уделённое время")
 
 
+@dp.message_handler(commands="mem")
+async def mem_user(message: types.Message):
+    
+    flag = True
+    with open("src/mem.csv", 'a') as file_mem:
+        with open("src/all_answers.csv", 'r') as file:
+            lines = file.readlines()
+            for i in range(len(lines) - 1, -1, -1):
+                data = lines[i].strip().split(',')
+                if data[0] == str(message.from_id):
+                    file_mem.write(",".join(data[:5]) + "\n")
+                    await message.reply("Молодец)")
+                    flag = False
+                    break
+    if flag:
+        await message.reply("М-да.......")
+    
+
+@dp.message_handler(commands="mem_admin")
+async def mem_user(message: types.Message):
+    whitelist = ["808547261", "771943260", "1029341343", "508893221", "588558797"]
+    
+    if not str(message.from_id) in whitelist:
+        await message.reply("Ошибка Доступа")
+        return
+
+    s = ["Мем:\n"]
+    user = []
+    with open("src/mem.csv", 'r') as file:
+        lines = file.readlines()
+        for i in range(len(lines) - 1, -1, -1):
+            data = lines[i].strip().split(',')
+            if data[0] in user:
+                continue
+            s.append(" | ".join(data[1:]))
+            user.append(data[0])
+    await message.reply("\n".join(s))
+
+
+
 @dp.message_handler()
 async def any_text_message2(message: types.Message):
     status, mes = validation(message.text)
