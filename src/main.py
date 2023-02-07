@@ -12,6 +12,15 @@ dp = Dispatcher(bot_user)
 def phone_validation(x):
     return re.fullmatch(r'[+]?[78]\(?\d{3}\)?\-?\d{3}\-?\d{2}\-?\d{2}', x) is not None
 
+def ready_validation(x):
+    return re.fullmatch(r'[гГ]ото(в|ва)\n\d{2}.\d{2}.\d{4}', x) is not None
+
+
+def divide_chunks(l, n):
+    # looping till length l
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+                    
 
 def validation(message):
     mes_arr = message.split('\n')
@@ -59,8 +68,11 @@ async def get_info(message: types.Message):
         await message.reply("Ошибка Доступа")
         return
 
+    ready_users = {}
     with open("src/is_ready.csv", 'r') as file:
-        ready_users = list(map(lambda x: x.strip(), file.readlines()))
+        for line in file.readlines():
+            x, y = line.strip().split(',')
+            ready_users[x] = y
 
     s = ["Список пользователей:\n"]
     
@@ -73,15 +85,20 @@ async def get_info(message: types.Message):
             if row[0] in users:
                 continue
             users.append(row[0])
-            all_users.append([row[1], row[0] in ready_users] + row[2:])
+            all_users.append([row[0], row[1], row[0] in ready_users] + row[2:])
 
     all_users.sort(key=lambda x: x[1])
     
     for user in all_users:
-        s.append(" | ".join([user[0], "Готов" if user[1] else "Не готов"] + user[2:] + ["\n"]))
+        if user[2]:
+            s.append(" | ".join([user[1], "Готов"] + user[3:] + [ready_users[user[0]]] + ["\n"]))
+        else:
+            s.append(" | ".join([user[1], "Не готов"] + user[3:] + ["\n"]))
 
     s.append(f"\nКолличество учатсников: %d" % len(all_users))
-    await message.reply("\n".join(s))
+    a_chunks = list(divide_chunks(s, 20))
+    for el in a_chunks:
+        await message.reply("\n".join(el))
 
 
 @dp.message_handler(commands="check")
@@ -103,15 +120,8 @@ async def start_check(message: types.Message):
     for row in all_users:
         if row in users:
             continue
-        await bot_user.send_message(int(row), f"Привет, мы решили проверить твою готовность участвовать на меро\nНажми  /ready  для проверки")
+        await bot_user.send_message(int(row), f"Привет, мы решили проверить твою готовность участвовать на меро\nЕсли да то нам нужно знать дату твоего рождения\nДля проверки напиши в ответном сообщении готов(-а) и введи дату рождения\n\nПример: \nГотов\n08.08.2003")
         users.append(row)
-
-
-@dp.message_handler(commands="ready")
-async def ready_user(message: types.Message):
-    with open("src/is_ready.csv", 'a') as file:
-        file.write(str(message.from_id) + "\n")
-    await message.reply("Спасибо за уделённое время")
 
 
 @dp.message_handler(commands="mem")
@@ -150,12 +160,22 @@ async def mem_user(message: types.Message):
                 continue
             s.append(" | ".join(data[1:]))
             user.append(data[0])
-    await message.reply("\n".join(s))
+    a_chunks = list(divide_chunks(s, 20))
+    for el in a_chunks:
+        await message.reply("\n".join(el))
 
 
 
 @dp.message_handler()
 async def any_text_message2(message: types.Message):
+    if ready_validation(message.text):
+        await message.reply("Спасибо за ответ!")
+        
+        with open("src/is_ready.csv", 'a') as file:
+            file.write(','.join([str(message.from_id), message.text.split("\n")[1]]) + "\n")
+    
+        return
+
     status, mes = validation(message.text)
     await message.answer(mes)
     if status:
