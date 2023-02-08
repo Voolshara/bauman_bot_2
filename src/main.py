@@ -32,10 +32,10 @@ def validation(message):
 
 
 def add_record(id, user, message):
-    with open("src/all_answers.csv", 'a') as file:
+    with open("src/all_answers.csv", 'a', encoding="utf-8") as file:
         file.write(",".join([id, user] + message) + "\n")
 
-    with open("src/is_ready.csv", 'a') as file:
+    with open("src/is_ready.csv", 'a', encoding="utf-8") as file:
         file.write(id + "\n")
 
 
@@ -69,16 +69,20 @@ async def get_info(message: types.Message):
         return
 
     ready_users = {}
-    with open("src/is_ready.csv", 'r') as file:
+    with open("src/is_ready.csv", 'r', encoding="utf-8") as file:
         for line in file.readlines():
-            x, y = line.strip().split(',')
+            try:
+                x, y = line.strip().split(',')
+            except ValueError:
+                print("[NOT CORRECT FORMAT]", line.strip())
+                continue
             ready_users[x] = y
 
     s = ["Список пользователей:\n"]
     
     users = []
     all_users = []
-    with open("src/all_answers.csv", 'r') as file:
+    with open("src/all_answers.csv", 'r', encoding="utf-8") as file:
         rows = file.readlines()
         for i in range(len(rows) - 1, -1, -1):
             row = rows[i].strip().split(',')
@@ -88,7 +92,6 @@ async def get_info(message: types.Message):
             all_users.append([row[0], row[1], row[0] in ready_users] + row[2:])
 
     all_users.sort(key=lambda x: x[1])
-    
     for user in all_users:
         if user[2]:
             s.append(" | ".join([user[1], "Готов"] + user[3:] + [ready_users[user[0]]] + ["\n"]))
@@ -110,10 +113,10 @@ async def start_check(message: types.Message):
         await message.reply("Ошибка Доступа")
         return
 
-    with open("src/all_answers.csv", 'r') as file:
+    with open("src/all_answers.csv", 'r', encoding="utf-8") as file:
         all_users = list(map(lambda x: x.strip().split(',')[0], file.readlines()))
 
-    with open("src/is_ready.csv", 'w') as file:
+    with open("src/is_ready.csv", 'w', encoding="utf-8") as file:
         pass
 
     users = []
@@ -128,8 +131,8 @@ async def start_check(message: types.Message):
 async def mem_user(message: types.Message):
     
     flag = True
-    with open("src/mem.csv", 'a') as file_mem:
-        with open("src/all_answers.csv", 'r') as file:
+    with open("src/mem.csv", 'a', encoding="utf-8") as file_mem:
+        with open("src/all_answers.csv", 'r', encoding="utf-8") as file:
             lines = file.readlines()
             for i in range(len(lines) - 1, -1, -1):
                 data = lines[i].strip().split(',')
@@ -152,7 +155,7 @@ async def mem_user(message: types.Message):
 
     s = ["Мем:\n"]
     user = []
-    with open("src/mem.csv", 'r') as file:
+    with open("src/mem.csv", 'r', encoding="utf-8") as file:
         lines = file.readlines()
         for i in range(len(lines) - 1, -1, -1):
             data = lines[i].strip().split(',')
@@ -171,7 +174,7 @@ async def any_text_message2(message: types.Message):
     if ready_validation(message.text):
         await message.reply("Спасибо за ответ!")
         
-        with open("src/is_ready.csv", 'a') as file:
+        with open("src/is_ready.csv", 'a', encoding="utf-8") as file:
             file.write(','.join([str(message.from_id), message.text.split("\n")[1]]) + "\n")
     
         return
@@ -179,7 +182,13 @@ async def any_text_message2(message: types.Message):
     status, mes = validation(message.text)
     await message.answer(mes)
     if status:
-        add_record(str(message.from_id), '@' + message.from_user["username"], message.text.replace(",", " ").split('\n'))
+        id = str(message.from_id)
+        try:
+            username = '@' + message.from_user["username"]
+        except:
+            username = '@' + id
+        mess = message.text.replace(",", " ").split('\n')
+        add_record(id, username, mess)
 
 
 def run():
